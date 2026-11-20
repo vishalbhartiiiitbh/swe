@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IRCTC FreightConnect | Railway Commodity Reservation System (P01)</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Top Header -->
+    <header class="navbar">
+        <div class="brand">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="4" y="3" width="16" height="14" rx="2"/>
+                    <path d="M4 11h16M12 3v8M8 17l-2 4M16 17l2 4M7 21h10"/>
+                    <circle cx="8.5" cy="14" r="1"/>
+                    <circle cx="15.5" cy="14" r="1"/>
+                </svg>
+            </div>
+            <div>
+                <h1>IRCTC <span class="accent">FreightConnect</span></h1>
+                <p class="subtitle">CS311 Software Engineering Lab &bull; Project P01 &bull; IIIT Bhagalpur</p>
+            </div>
+        </div>
+        <nav class="nav-tabs">
+            <button class="tab-btn active" data-tab="booking-tab">
+                <span class="tab-icon">&#128269;</span> Availability &amp; Booking
+            </button>
+            <button class="tab-btn" data-tab="manage-tab">
+                <span class="tab-icon">&#128203;</span> Manage Bookings <span id="booking-badge" class="badge">0</span>
+            </button>
+            <button class="tab-btn" data-tab="admin-tab">
+                <span class="tab-icon">&#9881;</span> Network &amp; Schedules (Admin)
+            </button>
+            <button class="tab-btn" data-tab="se-docs-tab">
+                <span class="tab-icon">&#128218;</span> SE Design Artifacts
+            </button>
+        </nav>
+    </header>
+
+    <!-- Main Container -->
+    <main class="container">
+        <!-- Quick Metrics Strip -->
+        <section class="stats-bar">
+            <div class="stat-card">
+                <span class="stat-label">Active Freight Corridors</span>
+                <span class="stat-value" id="stat-routes">6</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Total Active Bookings</span>
+                <span class="stat-value" id="stat-bookings">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Reserved Tonnage</span>
+                <span class="stat-value" id="stat-tonnage">0 MT</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Freight Revenue</span>
+                <span class="stat-value" id="stat-revenue">&#8377;0</span>
+            </div>
+        </section>
+
+        <!-- TAB 1: AVAILABILITY & BOOKING -->
+        <section id="booking-tab" class="tab-content active">
+            <div class="card search-card">
+                <div class="card-header">
+                    <h2>Check Commodity Transport Slot Availability</h2>
+                    <p>Search Indian Railways dedicated freight corridors by origin, destination, commodity class, and dispatch date.</p>
+                </div>
+                <form id="search-form" class="search-grid">
+                    <div class="form-group">
+                        <label for="origin-select">Origin Freight Terminal</label>
+                        <select id="origin-select" required>
+                            <option value="ALL">All Origins</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="dest-select">Destination Terminal</label>
+                        <select id="dest-select" required>
+                            <option value="ALL">All Destinations</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="cargo-select">Commodity Type</label>
+                        <select id="cargo-select">
+                            <option value="ALL">All Commodities</option>
+                            <option value="Coal & Minerals">Coal &amp; Minerals</option>
+                            <option value="Food Grains & Agri">Food Grains &amp; Agri</option>
+                            <option value="Steel & Cement">Steel &amp; Cement</option>
+                            <option value="Containers & FMCG">Containers &amp; FMCG</option>
+                            <option value="Petroleum & Chemicals">Petroleum &amp; Chemicals</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="service-select">Service Tier</label>
+                        <select id="service-select">
+                            <option value="ALL">Express &amp; Normal</option>
+                            <option value="Express">Superfast Freight Express</option>
+                            <option value="Normal">Standard Goods (Normal)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="dispatch-date">Dispatch Date</label>
+                        <input type="date" id="dispatch-date" required>
+                    </div>
+                    <div class="form-group btn-align">
+                        <button type="submit" class="btn btn-primary full-width">Search Slots</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Results Area -->
+            <div class="results-header">
+                <h3 id="results-title">Available Freight Corridors</h3>
+                <span class="hint-text">Real-time remaining wagon capacity calculated per date</span>
+            </div>
+            <div id="routes-list" class="routes-grid">
+                <!-- Dynamically rendered route cards -->
+            </div>
+        </section>
+
+        <!-- TAB 2: MANAGE BOOKINGS -->
+        <section id="manage-tab" class="tab-content">
+            <div class="card">
+                <div class="card-header flex-between">
+                    <div>
+                        <h2>Commodity Reservation Ledger</h2>
+                        <p>View confirmed Freight Waybills (FNR), download receipts, or cancel existing bookings to release wagon capacity.</p>
+                    </div>
+                    <div class="search-inline">
+                        <input type="text" id="fnr-search" placeholder="Filter by FNR ID or Company...">
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>FNR Waybill ID</th>
+                                <th>Business / Consignor</th>
+                                <th>Route &amp; Train</th>
+                                <th>Commodity &amp; Tier</th>
+                                <th>Dispatch Date</th>
+                                <th>Booked Load</th>
+                                <th>Total Tariff</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bookings-tbody">
+                            <!-- Dynamically populated -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="empty-bookings" class="empty-state hidden">
+                    <p>No commodity reservations found for the selected filter.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: NETWORK & SCHEDULES (ADMIN) -->
+        <section id="admin-tab" class="tab-content">
+            <div class="two-col-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Add New Freight Corridor / Schedule</h2>
+                        <p>Configure new rail routes, commodity tariffs, and rake capacities (Admin Use Case).</p>
+                    </div>
+                    <form id="add-route-form" class="stacked-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Train / Corridor Code</label>
+                                <input type="text" id="new-code" placeholder="e.g., DFC-109" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Corridor Name</label>
+                                <input type="text" id="new-name" placeholder="e.g., Eastern Coal Link" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Origin Station</label>
+                                <input type="text" id="new-origin" placeholder="e.g., Bhagalpur (BGP)" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Destination Station</label>
+                                <input type="text" id="new-dest" placeholder="e.g., Howrah (HWH)" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Primary Commodity</label>
+                                <select id="new-cargo" required>
+                                    <option value="Coal & Minerals">Coal &amp; Minerals</option>
+                                    <option value="Food Grains & Agri">Food Grains &amp; Agri</option>
+                                    <option value="Steel & Cement">Steel &amp; Cement</option>
+                                    <option value="Containers & FMCG">Containers &amp; FMCG</option>
+                                    <option value="Petroleum & Chemicals">Petroleum &amp; Chemicals</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Service Type</label>
+                                <select id="new-service" required>
+                                    <option value="Express">Express (Priority Transit)</option>
+                                    <option value="Normal">Normal (Standard Goods)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Schedule / Departure</label>
+                                <input type="text" id="new-schedule" placeholder="e.g., Daily 22:15 (14h 30m)" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Max Rake Capacity (MT)</label>
+                                <input type="number" id="new-capacity" min="100" max="5000" value="1200" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Tariff per Metric Ton (&#8377; / MT)</label>
+                            <input type="number" id="new-cost" min="200" max="15000" value="1450" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Register Freight Route</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div class="card-header flex-between">
+                        <div>
+                            <h2>System State &amp; Demo Controls</h2>
+                            <p>Manage local offline database (`localStorage`) for demonstration.</p>
+                        </div>
+                    </div>
+                    <div class="info-box">
+                        <h4>Offline Persistence Engine</h4>
+                        <p>This application runs 100% locally in your browser without requiring internet access or external servers. All routes, capacity deductions, and FNR bookings persist automatically in your browser's local storage.</p>
+                        <div class="action-group">
+                            <button id="reset-demo-btn" class="btn btn-outline">Reset Demo Data to Defaults</button>
+                        </div>
+                    </div>
+                    <div class="card-subheader">
+                        <h3>Configured Rail Network</h3>
+                    </div>
+                    <ul id="admin-route-list" class="compact-list"></ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: SE DESIGN ARTIFACTS (LAB MANUAL SECTION 5) -->
+        <section id="se-docs-tab" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Software Engineering Design Artifacts (Project Manual Section 5)</h2>
+                    <p>Complete requirement traceability matrix covering Actors, Use Cases, Relational Data Schema, and System Constraints for CS311 evaluation.</p>
+                </div>
+
+                <div class="se-grid">
+                    <!-- 5(a) Actors -->
+                    <div class="se-box">
+                        <h3>5(a). System Actors</h3>
+                        <ul>
+                            <li><strong>Business Consignor (Primary Actor):</strong> Commercial enterprises, manufacturers, or logistics coordinators who query route availability, reserve cargo tonnage, and cancel active waybills.</li>
+                            <li><strong>Railway Freight Administrator (Secondary Actor):</strong> Indian Railways operations officer responsible for configuring freight corridors, defining schedules, setting express/normal tariffs, and allocating total rake capacity.</li>
+                            <li><strong>Freight Scheduling &amp; Billing Engine (System Actor):</strong> Automated internal module that validates date constraints, computes remaining capacity dynamically, generates unique FNR numbers, and processes refunds upon cancellation.</li>
+                        </ul>
+                    </div>
+
+                    <!-- 5(b) Use Cases -->
+                    <div class="se-box">
+                        <h3>5(b). Use Case Specification</h3>
+                        <ul>
+                            <li><strong>UC-01 Check Slot Availability (Consignor):</strong> Filter rail corridors by origin, destination, commodity type, service tier, and dispatch date to inspect remaining metric tonnage (MT) and tariff rates.</li>
+                            <li><strong>UC-02 Book Transportation Slot (Consignor):</strong> Reserve a valid quantity (1 MT &le; Q &le; Remaining Capacity) on a future/current date; generates an official Freight Name Record (FNR) confirmation slip.</li>
+                            <li><strong>UC-03 Cancel Existing Booking (Consignor):</strong> Revoke a confirmed FNR booking prior to dispatch; atomically restores the booked tonnage back to the route's available pool and issues a cancellation receipt.</li>
+                            <li><strong>UC-04 Configure Freight Network (Admin):</strong> Add new cargo corridors specifying route terminals, schedule timings, Express vs. Normal classification, per-ton cost, and maximum rake capacity.</li>
+                        </ul>
+                    </div>
+
+                    <!-- 5(c) Data Model -->
+                    <div class="se-box">
+                        <h3>5(c). Entity-Relationship Data Model</h3>
+                        <table class="mini-table">
+                            <thead>
+                                <tr>
+                                    <th>Entity / Table</th>
+                                    <th>Key Attributes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>ROUTE_CORRIDOR</strong></td>
+                                    <td><code>route_id (PK)</code>, <code>train_code</code>, <code>origin</code>, <code>destination</code>, <code>cargo_type</code>, <code>service_tier (Express|Normal)</code>, <code>schedule</code>, <code>cost_per_mt</code>, <code>max_capacity_mt</code></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>RESERVATION</strong></td>
+                                    <td><code>fnr_id (PK)</code>, <code>route_id (FK)</code>, <code>company_name</code>, <code>gstin</code>, <code>dispatch_date</code>, <code>tonnage_booked</code>, <code>total_cost</code>, <code>status (CONFIRMED|CANCELLED)</code>, <code>created_at</code></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>SLOT_INVENTORY</strong></td>
+                                    <td><code>(route_id, dispatch_date) (PK)</code>, <code>booked_tonnage</code>, <code>remaining_capacity</code></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 5(d) Constraints -->
+                    <div class="se-box">
+                        <h3>5(d). Enforced Business Rules &amp; Constraints</h3>
+                        <ul>
+                            <li><strong>C-01 Capacity Integrity:</strong> <code>0 &lt; Booked_Tonnage &le; (Max_Capacity - Already_Booked_On_Date)</code>. Overbooking is strictly blocked.</li>
+                            <li><strong>C-02 Temporal Validity:</strong> Dispatch dates cannot be scheduled in the past relative to the system date.</li>
+                            <li><strong>C-03 Service Tier Pricing Rule:</strong> Express cargo services apply priority handling with higher per-MT tariffs compared to Normal goods services.</li>
+                            <li><strong>C-04 Idempotent Cancellation:</strong> Only bookings with status <code>CONFIRMED</code> can be cancelled; cancelling restores exact tonnage to that specific <code>(route_id, dispatch_date)</code> slot.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Booking Modal -->
+    <div id="booking-modal" class="modal hidden">
+        <div class="modal-backdrop" onclick="closeBookingModal()"></div>
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3>Book Commodity Transport Slot</h3>
+                <button class="close-btn" onclick="closeBookingModal()">&times;</button>
+            </div>
+            <form id="confirm-booking-form">
+                <input type="hidden" id="modal-route-id">
+                <div class="modal-route-summary" id="modal-route-summary"></div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="consignor-name">Business / Consignor Name *</label>
+                        <input type="text" id="consignor-name" placeholder="e.g., Tata Steel Logistics Ltd." required>
+                    </div>
+                    <div class="form-group">
+                        <label for="consignor-gst">GSTIN / Business Reg ID *</label>
+                        <input type="text" id="consignor-gst" placeholder="e.g., 10AAACT2727Q1ZV" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="modal-date">Dispatch Date *</label>
+                        <input type="date" id="modal-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal-tonnage">Cargo Quantity (Metric Tons) *</label>
+                        <input type="number" id="modal-tonnage" min="1" step="1" required>
+                        <small id="modal-cap-hint" class="hint-text"></small>
+                    </div>
+                </div>
+                <div class="fare-box">
+                    <div class="fare-row">
+                        <span>Base Freight Rate:</span>
+                        <span id="fare-rate">&#8377;0 / MT</span>
+                    </div>
+                    <div class="fare-row">
+                        <span>Service Tier Surcharge:</span>
+                        <span id="fare-tier">Included</span>
+                    </div>
+                    <div class="fare-row total">
+                        <span>Total Payable Tariff:</span>
+                        <span id="fare-total">&#8377;0</span>
+                    </div>
+                </div>
+                <div id="booking-error" class="error-banner hidden"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeBookingModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Confirm Reservation &amp; Issue FNR</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirmation / Cancellation Receipt Modal -->
+    <div id="receipt-modal" class="modal hidden">
+        <div class="modal-backdrop" onclick="closeReceiptModal()"></div>
+        <div class="modal-dialog receipt-dialog">
+            <div class="modal-header">
+                <h3 id="receipt-title">Official Freight Confirmation</h3>
+                <button class="close-btn" onclick="closeReceiptModal()">&times;</button>
+            </div>
+            <div id="receipt-body" class="receipt-paper"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="window.print()">Print Receipt</button>
+                <button type="button" class="btn btn-primary" onclick="closeReceiptModal()">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SwiftDispatch — Delivery Agent System (CS311 P03)</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        </div>
+        <div>
+          <h1>SwiftDispatch</h1>
+          <span class="badge-sub">CS311 • Project P03</span>
+        </div>
+      </div>
+
+      <nav class="nav-menu">
+        <button class="nav-btn active" data-tab="dashboard">
+          <span class="nav-icon">📊</span> Dashboard &amp; Live Dispatch
+        </button>
+        <button class="nav-btn" data-tab="book">
+          <span class="nav-icon">📦</span> Book a Delivery
+        </button>
+        <button class="nav-btn" data-tab="manage">
+          <span class="nav-icon">🔍</span> Track / Reschedule / Cancel
+        </button>
+        <button class="nav-btn" data-tab="couriers">
+          <span class="nav-icon">🚚</span> Couriers &amp; Rewards/Penalties
+        </button>
+        <button class="nav-btn" data-tab="archive">
+          <span class="nav-icon">🗄️</span> Archive &amp; Courier Query
+        </button>
+        <button class="nav-btn" data-tab="se-artifacts">
+          <span class="nav-icon">📐</span> SE Lab Design Artifacts
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="institution-tag">IIIT Bhagalpur • CS311 Lab</div>
+        <button id="resetDemoBtn" class="btn-outline-sm" title="Reset sample data to initial state">↺ Reset Demo Data</button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <header class="topbar">
+        <div>
+          <h2 id="pageTitle">Dashboard &amp; Live Dispatch</h2>
+          <p id="pageSubtitle" class="subtitle">Automated courier assignment engine &amp; real-time shipment operations</p>
+        </div>
+        <div class="topbar-actions">
+          <span class="status-pill"><span class="dot"></span> Offline Ready • LocalStorage Synced</span>
+        </div>
+      </header>
+
+      <!-- Notification Toast Banner -->
+      <div id="toastArea" class="toast-area"></div>
+
+      <!-- TAB 1: DASHBOARD -->
+      <section id="tab-dashboard" class="tab-panel active">
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <span class="kpi-label">Active Shipments</span>
+            <strong class="kpi-value" id="kpiActive">0</strong>
+            <span class="kpi-trend positive">In transit / scheduled</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">Available Couriers</span>
+            <strong class="kpi-value" id="kpiCouriers">0</strong>
+            <span class="kpi-trend">Across 5 service localities</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">Completed &amp; Archived</span>
+            <strong class="kpi-value" id="kpiArchived">0</strong>
+            <span class="kpi-trend positive">Historical audit log</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">Net Reward Pool</span>
+            <strong class="kpi-value" id="kpiRewards">₹0</strong>
+            <span class="kpi-trend">SLA incentives minus penalties</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>Active Delivery Queue</h3>
+            <div class="header-actions">
+              <button class="btn-primary-sm" onclick="switchTab('book')">+ New Booking</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Tracking ID</th>
+                  <th>Customer / Order</th>
+                  <th>Route (Source → Dest)</th>
+                  <th>Assigned Courier</th>
+                  <th>Scheduled Date</th>
+                  <th>Est. Cost</th>
+                  <th>Status</th>
+                  <th>Quick Actions</th>
+                </tr>
+              </thead>
+              <tbody id="activeDeliveriesTable"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>Recent System Notices &amp; Output Receipts</h3>
+            <button class="btn-ghost-sm" id="clearNoticesBtn">Clear Log</button>
+          </div>
+          <div id="outputReceiptFeed" class="receipt-feed"></div>
+        </div>
+      </section>
+
+      <!-- TAB 2: BOOK A DELIVERY -->
+      <section id="tab-book" class="tab-panel">
+        <div class="two-col">
+          <div class="card">
+            <div class="card-header">
+              <h3>New Delivery Request (Portal Webhook Simulator)</h3>
+            </div>
+            <form id="bookingForm" class="form-grid">
+              <div class="form-group">
+                <label>Customer Name *</label>
+                <input type="text" id="custName" placeholder="e.g., Aarav Sharma" required />
+              </div>
+              <div class="form-group">
+                <label>Portal Order Reference *</label>
+                <input type="text" id="orderRef" placeholder="e.g., AMZ-90421" required />
+              </div>
+              <div class="form-group">
+                <label>Source Locality (Pickup) *</label>
+                <select id="sourceLocality" required>
+                  <option value="Bhagalpur">Bhagalpur (Sabour Hub)</option>
+                  <option value="Patna">Patna (Kankarbagh Hub)</option>
+                  <option value="Lucknow">Lucknow (Gomti Nagar)</option>
+                  <option value="Delhi">Delhi (Okhla Fulfillment)</option>
+                  <option value="Kolkata">Kolkata (Salt Lake Hub)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Destination Locality (Drop) *</label>
+                <select id="destLocality" required>
+                  <option value="Patna">Patna</option>
+                  <option value="Bhagalpur">Bhagalpur</option>
+                  <option value="Lucknow">Lucknow</option>
+                  <option value="Delhi">Delhi</option>
+                  <option value="Kolkata">Kolkata</option>
+                </select>
+              </div>
+              <div class="form-group full">
+                <label>Street Address &amp; Pincode *</label>
+                <input type="text" id="destAddress" placeholder="e.g., Flat 302, Boring Road, Patna - 800001" required />
+              </div>
+              <div class="form-group">
+                <label>Package Weight (kg) *</label>
+                <input type="number" id="pkgWeight" min="0.5" max="50" step="0.5" value="2.0" required />
+              </div>
+              <div class="form-group">
+                <label>Requested Delivery Date *</label>
+                <input type="date" id="deliveryDate" required />
+              </div>
+              <div class="form-group">
+                <label>Optimization Priority *</label>
+                <select id="priorityMode">
+                  <option value="balanced">Balanced Score (Cost + Speed + Rating)</option>
+                  <option value="cheapest">Lowest Shipping Cost</option>
+                  <option value="fastest">Fastest Transit SLA</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Assignment Mode</label>
+                <select id="assignmentMode">
+                  <option value="auto">Auto-Assign Best Available Courier</option>
+                  <option value="manual">Manual Override Selection</option>
+                </select>
+              </div>
+              <div class="form-group full" id="manualCourierBox" style="display:none;">
+                <label>Select Eligible Courier</label>
+                <select id="manualCourierSelect"></select>
+              </div>
+
+              <div class="form-group full">
+                <button type="submit" class="btn-primary">Confirm &amp; Dispatch Booking</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3>Live Courier Matching Preview</h3>
+            </div>
+            <p class="muted-text">Based on source/destination coverage, availability, weight capacity, and pricing rates:</p>
+            <div id="matchingPreviewList" class="match-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: TRACK / RESCHEDULE / CANCEL -->
+      <section id="tab-manage" class="tab-panel">
+        <div class="card">
+          <div class="card-header">
+            <h3>Lookup Delivery by Tracking ID</h3>
+          </div>
+          <div class="search-bar-row">
+            <input type="text" id="lookupInput" placeholder="Enter Tracking ID (e.g., DEL-1001) or select from dropdown..." />
+            <select id="quickSelectBooking"></select>
+            <button class="btn-primary" id="lookupBtn">Generate Status Report</button>
+          </div>
+        </div>
+
+        <div id="manageWorkspace" class="two-col" style="display:none;">
+          <!-- Output 2: Delivery Status Report -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Delivery Status Report</h3>
+              <span id="reportStatusBadge" class="pill">BOOKED</span>
+            </div>
+            <div id="statusReportCard" class="report-box"></div>
+
+            <div class="timeline-controls">
+              <h4>Simulate Operational Progress</h4>
+              <div class="btn-row">
+                <button class="btn-secondary" onclick="advanceShipmentStatus('IN_TRANSIT')">Mark In-Transit</button>
+                <button class="btn-secondary" onclick="advanceShipmentStatus('OUT_FOR_DELIVERY')">Out for Delivery</button>
+                <button class="btn-success" onclick="completeAndArchiveShipment(true)">Deliver On-Time (+Reward)</button>
+                <button class="btn-warning" onclick="completeAndArchiveShipment(false)">Deliver Delayed (-Penalty)</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reschedule & Cancel Operations -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Modify Booking (Reschedule / Cancel)</h3>
+            </div>
+
+            <form id="rescheduleForm" class="sub-form">
+              <h4>Reschedule Delivery Window</h4>
+              <div class="form-group">
+                <label>New Delivery Date</label>
+                <input type="date" id="newDeliveryDate" required />
+              </div>
+              <div class="form-group">
+                <label>Reason for Rescheduling</label>
+                <input type="text" id="rescheduleReason" placeholder="e.g., Customer unavailable at address" required />
+              </div>
+              <button type="submit" class="btn-primary">Update &amp; Reschedule</button>
+            </form>
+
+            <hr class="divider" />
+
+            <form id="cancelForm" class="sub-form">
+              <h4>Cancel Booking</h4>
+              <div class="form-group">
+                <label>Cancellation Reason</label>
+                <input type="text" id="cancelReason" placeholder="e.g., Order cancelled by buyer on portal" required />
+              </div>
+              <button type="submit" class="btn-danger">Cancel Delivery &amp; Release Courier</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: COURIERS & REWARDS/PENALTIES -->
+      <section id="tab-couriers" class="tab-panel">
+        <div class="two-col-wide">
+          <div class="card">
+            <div class="card-header">
+              <h3>Registered Courier Fleet &amp; Pricing Matrix</h3>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Courier ID</th>
+                    <th>Partner Name</th>
+                    <th>Localities Served</th>
+                    <th>Base + Rate/kg</th>
+                    <th>SLA (Days)</th>
+                    <th>Rating</th>
+                    <th>Load / Cap</th>
+                    <th>Net Reward</th>
+                    <th>Availability</th>
+                  </tr>
+                </thead>
+                <tbody id="couriersTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3>Calculate Reward / Penalty</h3>
+            </div>
+            <form id="rewardPenaltyForm" class="form-grid">
+              <div class="form-group full">
+                <label>Select Courier *</label>
+                <select id="rpCourierSelect" required></select>
+              </div>
+              <div class="form-group full">
+                <label>Related Delivery ID (Optional)</label>
+                <input type="text" id="rpDeliveryId" placeholder="e.g., DEL-1001" />
+              </div>
+              <div class="form-group full">
+                <label>Evaluation Event *</label>
+                <select id="rpEventType" required>
+                  <option value="ON_TIME_BONUS">Early / On-Time SLA Delivery (+₹150 Reward)</option>
+                  <option value="HIGH_RATING_BONUS">5-Star Customer Feedback (+₹100 Reward)</option>
+                  <option value="DELAY_PENALTY">SLA Breach / Late Delivery (-₹200 Penalty)</option>
+                  <option value="DAMAGE_PENALTY">Package Mishandling / SLA Violation (-₹350 Penalty)</option>
+                </select>
+              </div>
+              <div class="form-group full">
+                <label>Inspector Remarks *</label>
+                <input type="text" id="rpRemarks" placeholder="e.g., Delivered 4 hours ahead of deadline" required />
+              </div>
+              <div class="form-group full">
+                <button type="submit" class="btn-primary">Apply Adjustment &amp; Issue Notice</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>Reward &amp; Penalty Ledger Notices</h3>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Notice ID</th>
+                  <th>Timestamp</th>
+                  <th>Courier</th>
+                  <th>Delivery Ref</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Remarks</th>
+                </tr>
+              </thead>
+              <tbody id="rewardLedgerBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: ARCHIVE & COURIER QUERY -->
+      <section id="tab-archive" class="tab-panel">
+        <div class="card">
+          <div class="card-header">
+            <h3>Archived Deliveries &amp; Past Services Query by Courier</h3>
+            <div class="filter-row">
+              <label for="archiveCourierFilter">Filter by Courier:</label>
+              <select id="archiveCourierFilter">
+                <option value="ALL">All Couriers (Complete Archive)</option>
+              </select>
+              <button class="btn-secondary-sm" id="exportArchiveBtn">⬇ Export CSV Report</button>
+            </div>
+          </div>
+
+          <div id="courierServiceSummary" class="summary-strip"></div>
+
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Tracking ID</th>
+                  <th>Courier Partner</th>
+                  <th>Customer</th>
+                  <th>Route</th>
+                  <th>Weight</th>
+                  <th>Final Charge</th>
+                  <th>Completed / Closed On</th>
+                  <th>Final Outcome</th>
+                </tr>
+              </thead>
+              <tbody id="archiveTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 6: SE LAB DESIGN ARTIFACTS -->
+      <section id="tab-se-artifacts" class="tab-panel">
+        <div class="card">
+          <div class="card-header">
+            <h3>CS311 Software Engineering Design Specification (Section 5 Requirements)</h3>
+          </div>
+          <p class="muted-text">Complete mapping of Actors, Use Cases, Data Model Entities, and Business Constraints implemented in this application.</p>
+
+          <div class="artifacts-grid">
+            <div class="artifact-box">
+              <h4>(a) System Actors</h4>
+              <ul>
+                <li><strong>Online Shopping Portal (External System):</strong> Submits automated delivery booking requests with source, destination, and package metadata.</li>
+                <li><strong>Delivery Dispatch Engine (Automated Actor):</strong> Evaluates eligible couriers by locality, capacity, cost, and SLA rating to assign the optimal courier.</li>
+                <li><strong>Operations Administrator / Dispatcher:</strong> Monitors live deliveries, triggers rescheduling/cancellations, and audits courier rewards/penalties.</li>
+                <li><strong>Courier Partner Agent:</strong> Executes pickups/deliveries, updates shipment milestones, and receives reward/penalty notices.</li>
+                <li><strong>Customer (Recipient):</strong> Tracks shipment status and requests date rescheduling or cancellation prior to final delivery.</li>
+              </ul>
+            </div>
+
+            <div class="artifact-box">
+              <h4>(b) Use Cases per Actor</h4>
+              <ul>
+                <li><strong>Portal / Customer:</strong> UC-01 Book Delivery, UC-02 Check Delivery Status, UC-03 Reschedule Delivery, UC-04 Cancel Booking.</li>
+                <li><strong>Dispatch Engine:</strong> UC-05 Auto-Match &amp; Assign Best Courier, UC-06 Generate Booking/Status/Cancellation Receipts.</li>
+                <li><strong>Operations Admin:</strong> UC-07 Calculate Courier Rewards &amp; Penalties, UC-08 Archive Completed Deliveries, UC-09 Query Past Services by Courier.</li>
+                <li><strong>Courier Agent:</strong> UC-10 Update Transit Status &amp; Complete Delivery.</li>
+              </ul>
+            </div>
+
+            <div class="artifact-box">
+              <h4>(c) Relational Data Model (Entities / Tables)</h4>
+              <ul>
+                <li><strong>COURIERS:</strong> <code>courier_id (PK)</code>, <code>name</code>, <code>localities[]</code>, <code>base_rate</code>, <code>per_kg_rate</code>, <code>sla_days</code>, <code>rating</code>, <code>max_capacity</code>, <code>active_load</code>, <code>reward_balance</code>, <code>is_available</code></li>
+                <li><strong>DELIVERIES:</strong> <code>tracking_id (PK)</code>, <code>order_ref</code>, <code>customer_name</code>, <code>source</code>, <code>destination</code>, <code>address</code>, <code>weight_kg</code>, <code>courier_id (FK)</code>, <code>scheduled_date</code>, <code>total_cost</code>, <code>status</code></li>
+                <li><strong>REWARD_PENALTY_LEDGER:</strong> <code>notice_id (PK)</code>, <code>courier_id (FK)</code>, <code>delivery_id (FK)</code>, <code>type</code>, <code>amount</code>, <code>remarks</code>, <code>timestamp</code></li>
+                <li><strong>DELIVERY_ARCHIVE:</strong> <code>archive_id (PK)</code>, <code>tracking_id</code>, <code>courier_id (FK)</code>, <code>route</code>, <code>final_cost</code>, <code>outcome</code>, <code>closed_at</code></li>
+              </ul>
+            </div>
+
+            <div class="artifact-box">
+              <h4>(d) Enforced System Constraints &amp; Rules</h4>
+              <ul>
+                <li><strong>Rule 1 (Locality Coverage):</strong> A courier can only be assigned if both <code>source</code> and <code>destination</code> exist in their serviceable localities.</li>
+                <li><strong>Rule 2 (Capacity &amp; Availability):</strong> Couriers marked unavailable or at <code>active_load &gt;= max_capacity</code> are excluded from assignment.</li>
+                <li><strong>Rule 3 (State Transition Guard):</strong> Cancelled or Delivered shipments cannot be rescheduled or cancelled again.</li>
+                <li><strong>Rule 4 (Automatic Resource Release):</strong> Cancelling or archiving a shipment decrements the assigned courier's <code>active_load</code>.</li>
+                <li><strong>Rule 5 (Immutable Audit Archive):</strong> Every terminal delivery (Delivered or Cancelled) is automatically archived with full courier attribution.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

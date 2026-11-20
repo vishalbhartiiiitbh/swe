@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AegisVault | P02 Multimedia Content Protection System</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+
+  <!-- Top Navigation Bar -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo-badge">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="M9 12l2 2 4-4"/>
+        </svg>
+      </div>
+      <div>
+        <h1>AegisVault <span class="tag">P02</span></h1>
+        <p class="subtitle">CS311 Software Engineering Lab &bull; Multimedia Content Protection System</p>
+      </div>
+    </div>
+
+    <nav class="nav-tabs">
+      <button class="tab-btn active" data-tab="vault-tab">
+        <span>🛡️</span> Secure Vault
+      </button>
+      <button class="tab-btn" data-tab="profile-tab">
+        <span>👤</span> User Profile
+      </button>
+      <button class="tab-btn" data-tab="se-blueprint-tab">
+        <span>📐</span> SE Blueprint (Actors &amp; Rules)
+      </button>
+      <button class="tab-btn" data-tab="audit-tab">
+        <span>📜</span> Security Audit Log
+      </button>
+    </nav>
+
+    <div class="header-actions">
+      <button id="demo-seed-btn" class="btn btn-ghost" title="Load sample protected multimedia files for quick demo">
+        ✨ Load Demo Files
+      </button>
+      <button id="reset-system-btn" class="btn btn-danger-outline" title="Reset Vault & Profile">
+        ↺ Reset
+      </button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Status Banner -->
+    <div id="status-banner" class="banner hidden"></div>
+
+    <!-- TAB 1: SECURE VAULT -->
+    <section id="vault-tab" class="tab-panel active">
+      <!-- Top KPI Strip -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Active Owner Profile</div>
+          <div class="kpi-value" id="kpi-owner">Not Configured</div>
+          <div class="kpi-sub" id="kpi-owner-meta">Setup profile to protect files</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Protected Documents</div>
+          <div class="kpi-value" id="kpi-total-files">0</div>
+          <div class="kpi-sub">Text, Audio, Video &amp; Binary Vault</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Encryption Standard</div>
+          <div class="kpi-value">AES-256-GCM</div>
+          <div class="kpi-sub">PBKDF2 (100,000 iterations) + Profile Binding</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Intrusion Lockout Policy</div>
+          <div class="kpi-value" id="kpi-lock-status">Active (Max 3 Tries)</div>
+          <div class="kpi-sub">Per-document brute-force lock</div>
+        </div>
+      </div>
+
+      <div class="workspace-grid">
+        <!-- Left Column: Encrypt & Protect Upload Panel -->
+        <div class="card upload-card">
+          <div class="card-header">
+            <h2>1. Protect &amp; Encrypt Document</h2>
+            <span class="badge badge-primary">Input Module</span>
+          </div>
+          <p class="muted">
+            Select any personal file (<strong>Text, Audio, Video, PDF, Image</strong>). It will be cryptographically bound to your User Profile and Master PIN.
+          </p>
+
+          <form id="encrypt-form">
+            <div class="drop-zone" id="drop-zone">
+              <input type="file" id="file-input" required hidden />
+              <div class="drop-icon">📁</div>
+              <p class="drop-title" id="file-label">Click or drag a file here to protect</p>
+              <p class="drop-hint">Supports .txt, .mp3, .wav, .mp4, .pdf, .png, etc.</p>
+            </div>
+
+            <div class="form-group">
+              <label for="doc-classification">Sensitivity Level</label>
+              <select id="doc-classification">
+                <option value="Confidential">Confidential (Personal Media / Docs)</option>
+                <option value="Top Secret">Top Secret (Critical Identity / Keys)</option>
+                <option value="Internal">Internal (Academic / Project Work)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="encrypt-pin">Document Access PIN / Passphrase</label>
+              <input type="password" id="encrypt-pin" placeholder="Enter PIN (e.g., 1234)" required minlength="4" />
+            </div>
+
+            <div class="form-group">
+              <label for="encrypt-sec-ans">Security Challenge Answer (Bound to Profile)</label>
+              <input type="text" id="encrypt-sec-ans" placeholder="Your profile security answer" required />
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">
+              🔒 Encrypt &amp; Store in Vault
+            </button>
+          </form>
+
+          <div class="divider"></div>
+
+          <div class="card-header">
+            <h3>External .aegis File Decryptor</h3>
+            <span class="badge badge-info">Portable</span>
+          </div>
+          <p class="muted small">Have an exported <code>.aegis</code> encrypted container? Load it here to decrypt offline.</p>
+          <input type="file" id="import-aegis-input" accept=".aegis,.json" class="file-compact" />
+        </div>
+
+        <!-- Right Column: Protected Documents Repository -->
+        <div class="card vault-list-card">
+          <div class="card-header">
+            <div>
+              <h2>2. Protected Multimedia Repository</h2>
+              <p class="muted small">All 5 functional operations: Encrypt, Decrypt, Open, Copy, Delete with 3-attempt lock enforcement.</p>
+            </div>
+            <div class="filter-bar">
+              <select id="filter-type">
+                <option value="ALL">All Types</option>
+                <option value="TEXT">Text / Docs</option>
+                <option value="AUDIO">Audio</option>
+                <option value="VIDEO">Video</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="vault-empty" class="empty-state">
+            <div class="empty-icon">🗄️</div>
+            <h3>Vault is Currently Empty</h3>
+            <p>Upload a multimedia file on the left or click <strong>"✨ Load Demo Files"</strong> in the top bar to test instantly.</p>
+          </div>
+
+          <div id="vault-grid" class="vault-items"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: USER PROFILE -->
+    <section id="profile-tab" class="tab-panel">
+      <div class="card narrow-card">
+        <div class="card-header">
+          <div>
+            <h2>Document Owner Profile Template</h2>
+            <p class="muted">As required by Section 2 of the Project Manual: user identity attributes cryptographically bound to protected files.</p>
+          </div>
+          <span class="badge badge-primary">Identity Binding</span>
+        </div>
+
+        <form id="profile-form" class="form-grid">
+          <div class="form-group">
+            <label for="prof-name">Full Name *</label>
+            <input type="text" id="prof-name" required placeholder="e.g., Vishal Bharti" />
+          </div>
+          <div class="form-group">
+            <label for="prof-id">Roll No / User ID *</label>
+            <input type="text" id="prof-id" required placeholder="e.g., 2301CS14" />
+          </div>
+          <div class="form-group">
+            <label for="prof-email">Institutional Email *</label>
+            <input type="email" id="prof-email" required placeholder="e.g., vishal@iiitbh.ac.in" />
+          </div>
+          <div class="form-group">
+            <label for="prof-org">Department / Organization *</label>
+            <input type="text" id="prof-org" required placeholder="e.g., CSE, IIIT Bhagalpur" />
+          </div>
+          <div class="form-group full-span">
+            <label for="prof-sec-q">Profile Security Question (2nd Factor) *</label>
+            <select id="prof-sec-q">
+              <option value="What is your favorite algorithm?">What is your favorite algorithm?</option>
+              <option value="What is your hometown?">What is your hometown?</option>
+              <option value="What was your first programming language?">What was your first programming language?</option>
+              <option value="What is your pet's name?">What is your pet's name?</option>
+            </select>
+          </div>
+          <div class="form-group full-span">
+            <label for="prof-sec-a">Security Answer (Case-Insensitive) *</label>
+            <input type="text" id="prof-sec-a" required placeholder="e.g., Dijkstra" />
+          </div>
+          <div class="full-span">
+            <button type="submit" class="btn btn-primary">💾 Save &amp; Bind User Profile</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- TAB 3: SOFTWARE ENGINEERING BLUEPRINT (SECTION 5 OF MANUAL) -->
+    <section id="se-blueprint-tab" class="tab-panel">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2>Software Engineering Design Artifacts (Section 5 Deliverable)</h2>
+            <p class="muted">Complete Actor List, Use-Case Matrix, Data Model Entities, and Enforced System Rules for viva presentation.</p>
+          </div>
+          <span class="badge badge-success">CS311 Viva Ready</span>
+        </div>
+
+        <div class="se-grid">
+          <div class="se-box">
+            <h3>5(a). System Actors</h3>
+            <ul>
+              <li><strong>Document Owner (Authorized User):</strong> Creates user profile, encrypts multimedia files, opens, copies, decrypts, and deletes own protected files.</li>
+              <li><strong>Unauthorized User / Intruder:</strong> Attempts to open, copy, or delete protected documents without valid credentials; triggers 3-strike lockout.</li>
+              <li><strong>Security / Policy Engine (System Actor):</strong> Enforces AES-GCM encryption, tracks failed attempts per operation, locks compromised accounts/documents, and logs audit events.</li>
+            </ul>
+          </div>
+
+          <div class="se-box">
+            <h3>5(c). Data Model Entities</h3>
+            <ul>
+              <li><strong>UserProfile:</strong> <code>userId, fullName, email, department, securityQuestion, securityAnswerHash, createdAt</code></li>
+              <li><strong>ProtectedDocument:</strong> <code>docId, ownerId (FK), fileName, mediaType, mimeType, originalSize, ciphertextB64, ivB64, saltB64, failedAttempts, isLocked, lockReason</code></li>
+              <li><strong>AuditLog:</strong> <code>logId, docId (FK), actorRole, operation (ENCRYPT|DECRYPT|OPEN|COPY|DELETE), status (SUCCESS|FAILURE|LOCKED), timestamp</code></li>
+            </ul>
+          </div>
+        </div>
+
+        <h3 class="mt-20">5(b). Use Case Matrix per Actor</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Use Case ID</th>
+                <th>Operation</th>
+                <th>Primary Actor</th>
+                <th>Pre-condition</th>
+                <th>Post-condition / Output</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>UC-01</td>
+                <td>Encrypt Document</td>
+                <td>Document Owner</td>
+                <td>Active User Profile &amp; raw multimedia file selected</td>
+                <td>AES-256-GCM encrypted blob stored + downloadable <code>.aegis</code> file</td>
+              </tr>
+              <tr>
+                <td>UC-02</td>
+                <td>Decrypt Document</td>
+                <td>Document Owner</td>
+                <td>Document unlocked &amp; valid PIN + Profile Answer supplied</td>
+                <td>Original plaintext file restored and downloaded to local PC</td>
+              </tr>
+              <tr>
+                <td>UC-03</td>
+                <td>Open Protected Document</td>
+                <td>Owner / Intruder</td>
+                <td>Document exists and <code>failedAttempts &lt; 3</code></td>
+                <td>Success: In-app multimedia preview (Text/Audio/Video). Failure: Attempt +1 (Locks at 3)</td>
+              </tr>
+              <tr>
+                <td>UC-04</td>
+                <td>Copy Protected Document</td>
+                <td>Owner / Intruder</td>
+                <td>Document exists and <code>failedAttempts &lt; 3</code></td>
+                <td>Success: Authenticated clone/export created. Failure: Attempt +1 (Locks at 3)</td>
+              </tr>
+              <tr>
+                <td>UC-05</td>
+                <td>Delete Protected Document</td>
+                <td>Owner / Intruder</td>
+                <td>Document exists and <code>failedAttempts &lt; 3</code></td>
+                <td>Success: Permanently purged from Vault. Failure: Attempt +1 (Locks at 3)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="mt-20">5(d). Enforced Business Rules &amp; Constraints</h3>
+        <div class="rules-grid">
+          <div class="rule-item"><strong>R1 (3-Strike Lockout):</strong> Any 3 consecutive failed authentication attempts across Open, Copy, or Delete immediately locks the document account.</div>
+          <div class="rule-item"><strong>R2 (Zero Plaintext Storage):</strong> Raw file bytes are wiped from memory after encryption; only salted ciphertext and IV are persisted.</div>
+          <div class="rule-item"><strong>R3 (Profile Cryptographic Binding):</strong> Encryption key is derived from both the Document PIN and User Profile attributes.</div>
+          <div class="rule-item"><strong>R4 (Mandatory Audit Trail):</strong> Every success, failure, and lockout event is immutably recorded with timestamp.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: AUDIT LOG -->
+    <section id="audit-tab" class="tab-panel">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2>Immutable Security &amp; Access Audit Log</h2>
+            <p class="muted">Tracks every Encrypt, Decrypt, Open, Copy, Delete, and 3-Attempt Lockout event.</p>
+          </div>
+          <button id="clear-logs-btn" class="btn btn-ghost">Clear Logs</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Operation</th>
+                <th>Document</th>
+                <th>Result</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody id="audit-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- AUTHENTICATION / OPERATION MODAL (FOR OPEN, COPY, DELETE, DECRYPT) -->
+  <div id="auth-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modal-title">Authorize Operation</h3>
+        <button id="modal-close" class="icon-btn">&times;</button>
+      </div>
+      <p id="modal-desc" class="muted"></p>
+
+      <div id="attempt-indicator" class="attempt-pill">Attempts remaining: 3 / 3</div>
+
+      <form id="modal-auth-form">
+        <div class="form-group">
+          <label for="modal-pin">Enter Document Access PIN</label>
+          <input type="password" id="modal-pin" required placeholder="Enter PIN" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label id="modal-sec-label" for="modal-sec-ans">Profile Security Answer</label>
+          <input type="text" id="modal-sec-ans" required placeholder="Enter security answer" autocomplete="off" />
+        </div>
+        <div id="modal-error" class="modal-error hidden"></div>
+        <div class="modal-actions">
+          <button type="button" id="modal-cancel" class="btn btn-ghost">Cancel</button>
+          <button type="submit" id="modal-submit" class="btn btn-primary">Verify &amp; Execute</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- SECURE MULTIMEDIA VIEWER MODAL (FOR "OPEN PROTECTED DOCUMENT") -->
+  <div id="viewer-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-box viewer-box">
+      <div class="modal-header">
+        <div>
+          <h3 id="viewer-title">Decrypted Preview</h3>
+          <span class="badge badge-success">Authenticated Session &bull; Copy-Protected View</span>
+        </div>
+        <button id="viewer-close" class="icon-btn">&times;</button>
+      </div>
+      <div id="viewer-content" class="viewer-content"></div>
+      <div class="modal-actions">
+        <button id="viewer-download-btn" class="btn btn-primary">⬇️ Save Decrypted Copy to PC</button>
+        <button id="viewer-done-btn" class="btn btn-ghost">Close Secure View</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- OWNER UNLOCK MODAL (IF LOCKED AFTER 3 FAILED ATTEMPTS) -->
+  <div id="unlock-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>🔒 Document Account Locked</h3>
+        <button id="unlock-close" class="icon-btn">&times;</button>
+      </div>
+      <p class="muted">
+        This document was locked after <strong>3 consecutive failed attempts</strong>. Verify your Owner Roll ID &amp; Profile Security Answer to reset the lock counter.
+      </p>
+      <form id="unlock-form">
+        <div class="form-group">
+          <label for="unlock-userid">Owner Roll No / User ID</label>
+          <input type="text" id="unlock-userid" required placeholder="e.g., 2301CS14" />
+        </div>
+        <div class="form-group">
+          <label for="unlock-sec">Profile Security Answer</label>
+          <input type="text" id="unlock-sec" required placeholder="Security answer" />
+        </div>
+        <div id="unlock-error" class="modal-error hidden"></div>
+        <div class="modal-actions">
+          <button type="button" id="unlock-cancel" class="btn btn-ghost">Cancel</button>
+          <button type="submit" class="btn btn-primary">🔓 Verify Owner &amp; Unlock</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer class="footer">
+    CS311 Software Engineering Lab &bull; IIIT Bhagalpur &bull; Project P02: Multimedia Content Protection System (Runs 100% Offline via Web Crypto API)
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

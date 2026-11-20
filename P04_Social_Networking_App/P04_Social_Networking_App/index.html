@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NexusConnect | IIIT Bhagalpur CS311 Project P04</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- AUTHENTICATION VIEW -->
+  <div id="auth-view" class="auth-wrapper">
+    <div class="auth-left">
+      <div class="brand-badge">CS311 Software Engineering Lab • Project P04</div>
+      <h1 class="brand-title">Nexus<span>Connect</span></h1>
+      <p class="brand-subtitle">
+        A modern, offline-first social & professional network built for seamless profile building, friend discovery, real-time messaging, and community feeds.
+      </p>
+      <div class="feature-highlights">
+        <div class="highlight-card">
+          <div class="h-icon">👤</div>
+          <div>
+            <h4>Rich Profiles</h4>
+            <p>Education, career timeline, hobbies, contact info & custom avatars.</p>
+          </div>
+        </div>
+        <div class="highlight-card">
+          <div class="h-icon">🤝</div>
+          <div>
+            <h4>Smart Connections</h4>
+            <p>Discover peers, send/accept friend requests, and view profiles.</p>
+          </div>
+        </div>
+        <div class="highlight-card">
+          <div class="h-icon">💬</div>
+          <div>
+            <h4>Instant Messaging</h4>
+            <p>1-on-1 direct messaging with read indicators and persistent history.</p>
+          </div>
+        </div>
+      </div>
+      <div class="demo-credentials-box">
+        <div class="demo-header">
+          <span>⚡ Quick Demo Accounts (Pre-loaded Data)</span>
+          <button type="button" class="btn-xs" onclick="resetDemoData()">Reset Demo DB</button>
+        </div>
+        <div class="demo-chips">
+          <button type="button" class="demo-chip primary-chip" onclick="quickLogin('test@gmail.com', '12345678')">
+            ★ Test User (test@gmail.com)
+          </button>
+          <button type="button" class="demo-chip" onclick="quickLogin('vishal@iiitbh.ac.in', 'Pass@123')">
+            Vishal Bharti
+          </button>
+          <button type="button" class="demo-chip" onclick="quickLogin('aarav@iiitbh.ac.in', 'Pass@123')">
+            Aarav Sharma
+          </button>
+          <button type="button" class="demo-chip" onclick="quickLogin('priya@iiitbh.ac.in', 'Pass@123')">
+            Priya Verma
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="auth-right">
+      <div class="auth-card">
+        <div class="auth-tabs">
+          <button id="tab-login" class="auth-tab active" onclick="switchAuthTab('login')">Sign In</button>
+          <button id="tab-register" class="auth-tab" onclick="switchAuthTab('register')">Create Account</button>
+        </div>
+
+        <!-- LOGIN FORM -->
+        <form id="login-form" class="auth-form" onsubmit="handleLogin(event)">
+          <h2>Welcome Back</h2>
+          <p class="form-desc">Enter your registered credentials to access your network.</p>
+
+          <div class="form-group">
+            <label for="login-email">Email Address *</label>
+            <input type="email" id="login-email" value="test@gmail.com" placeholder="test@gmail.com" required />
+          </div>
+
+          <div class="form-group">
+            <label for="login-password">Password *</label>
+            <input type="password" id="login-password" value="12345678" placeholder="Enter your password" required />
+          </div>
+
+          <div id="login-error" class="error-banner hidden"></div>
+
+          <button type="submit" class="btn-primary btn-full">Sign In to NexusConnect</button>
+        </form>
+
+        <!-- REGISTER FORM -->
+        <form id="register-form" class="auth-form hidden" onsubmit="handleRegister(event)">
+          <h2>Join NexusConnect</h2>
+          <p class="form-desc">Create your account to start connecting with peers.</p>
+
+          <div class="form-group">
+            <label for="reg-name">Full Name *</label>
+            <input type="text" id="reg-name" value="Test User" placeholder="e.g. Test User" required />
+          </div>
+
+          <div class="form-group">
+            <label for="reg-email">Email Address *</label>
+            <input type="email" id="reg-email" value="test@gmail.com" placeholder="test@gmail.com" required />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="reg-password">Password * <small>(min 6 chars)</small></label>
+              <input type="password" id="reg-password" value="12345678" placeholder="Create password" minlength="6" required />
+            </div>
+            <div class="form-group">
+              <label for="reg-dob">Date of Birth *</label>
+              <input type="date" id="reg-dob" value="2000-01-01" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="reg-edu">Education / Institution</label>
+            <input type="text" id="reg-edu" value="B.Tech CSE, IIIT Bhagalpur" placeholder="e.g. B.Tech CSE, IIIT Bhagalpur" />
+          </div>
+
+          <div id="register-error" class="error-banner hidden"></div>
+
+          <button type="submit" class="btn-primary btn-full">Create Account & Continue</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APPLICATION SHELL -->
+  <div id="app-view" class="app-shell hidden">
+    <!-- Top Navbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="logo-small" onclick="navigateTo('feed')">
+          <span class="logo-dot"></span> Nexus<span>Connect</span>
+        </div>
+        <div class="search-bar">
+          <span>🔍</span>
+          <input type="text" id="global-search" placeholder="Search people by name, education, or hobbies..." oninput="handleGlobalSearch(this.value)" />
+        </div>
+      </div>
+
+      <nav class="topbar-nav">
+        <button class="nav-item active" data-page="feed" onclick="navigateTo('feed')">
+          <span class="nav-icon">🏠</span>
+          <span>Feed</span>
+        </button>
+        <button class="nav-item" data-page="friends" onclick="navigateTo('friends')">
+          <span class="nav-icon">👥</span>
+          <span>Friends</span>
+          <span id="nav-req-badge" class="badge hidden">0</span>
+        </button>
+        <button class="nav-item" data-page="messages" onclick="navigateTo('messages')">
+          <span class="nav-icon">💬</span>
+          <span>Messages</span>
+          <span id="nav-msg-badge" class="badge hidden">0</span>
+        </button>
+        <button class="nav-item" data-page="profile" onclick="navigateTo('profile')">
+          <span class="nav-icon">👤</span>
+          <span>My Profile</span>
+        </button>
+        <button class="nav-item" data-page="se-docs" onclick="navigateTo('se-docs')">
+          <span class="nav-icon">📐</span>
+          <span>SE Specs</span>
+        </button>
+      </nav>
+
+      <div class="topbar-right">
+        <div class="user-pill" onclick="navigateTo('profile')">
+          <img id="topbar-avatar" src="" alt="Avatar" />
+          <span id="topbar-name">User</span>
+        </div>
+        <button class="btn-logout" onclick="handleLogout()" title="Log Out">Logout</button>
+      </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="main-container">
+      <!-- Left Profile Summary Sidebar -->
+      <aside class="left-sidebar">
+        <div class="card profile-mini-card">
+          <div class="mini-cover"></div>
+          <img id="mini-avatar" class="mini-avatar" src="" alt="Profile Photo" />
+          <h3 id="mini-name">User Name</h3>
+          <p id="mini-headline" class="mini-headline">Student / Developer</p>
+          <p id="mini-location" class="mini-location">📍 Location</p>
+
+          <div class="mini-stats">
+            <div class="stat-box" onclick="navigateTo('friends')">
+              <strong id="mini-friends-count">0</strong>
+              <span>Friends</span>
+            </div>
+            <div class="stat-box" onclick="navigateTo('feed')">
+              <strong id="mini-posts-count">0</strong>
+              <span>Posts</span>
+            </div>
+          </div>
+
+          <button class="btn-outline btn-full" onclick="navigateTo('profile')">Edit Full Profile</button>
+        </div>
+
+        <div class="card rules-card">
+          <h4>🛡️ Enforced Business Rules</h4>
+          <ul class="rules-list">
+            <li>Unique email registration</li>
+            <li>Age validation (≥ 13 years)</li>
+            <li>No duplicate / self friend requests</li>
+            <li>Messaging restricted to accepted friends</li>
+            <li>Strict input sanitization & validation</li>
+          </ul>
+        </div>
+      </aside>
+
+      <!-- Dynamic Page Viewport -->
+      <section class="content-area">
+        <!-- PAGE 1: HOME FEED -->
+        <div id="page-feed" class="page-section">
+          <div class="card composer-card">
+            <div class="composer-top">
+              <img id="composer-avatar" src="" alt="Avatar" />
+              <textarea id="post-content" rows="2" placeholder="Share an update, project milestone, or thought with your friends..."></textarea>
+            </div>
+            <div class="composer-actions">
+              <select id="post-tag" class="tag-select">
+                <option value="General">📌 General Update</option>
+                <option value="Project">💻 Project / Tech</option>
+                <option value="Academic">🎓 Academic / IIITB</option>
+                <option value="Career">💼 Career / Internship</option>
+              </select>
+              <button class="btn-primary" onclick="createPost()">Publish Post</button>
+            </div>
+          </div>
+
+          <div id="feed-list" class="feed-list"></div>
+        </div>
+
+        <!-- PAGE 2: FRIENDS & DISCOVERY -->
+        <div id="page-friends" class="page-section hidden">
+          <div class="section-header">
+            <h2>Connections & People Discovery</h2>
+            <p>Manage incoming friend requests, view your friends list, and discover new people.</p>
+          </div>
+
+          <!-- Pending Requests -->
+          <div id="pending-requests-section" class="card mb-20 hidden">
+            <h3 class="card-title">Incoming Friend Requests (<span id="pending-count">0</span>)</h3>
+            <div id="pending-requests-grid" class="people-grid"></div>
+          </div>
+
+          <!-- My Friends -->
+          <div class="card mb-20">
+            <h3 class="card-title">My Friends (<span id="my-friends-count">0</span>)</h3>
+            <div id="my-friends-grid" class="people-grid"></div>
+          </div>
+
+          <!-- Discover People -->
+          <div class="card">
+            <h3 class="card-title">Discover People on NexusConnect</h3>
+            <div id="discover-people-grid" class="people-grid"></div>
+          </div>
+        </div>
+
+        <!-- PAGE 3: MESSAGING -->
+        <div id="page-messages" class="page-section hidden">
+          <div class="card chat-layout">
+            <div class="chat-sidebar">
+              <div class="chat-sidebar-header">
+                <h3>Direct Messages</h3>
+                <small>Only connected friends can be messaged</small>
+              </div>
+              <div id="chat-friends-list" class="chat-friends-list"></div>
+            </div>
+
+            <div class="chat-main">
+              <div id="chat-empty-state" class="chat-empty-state">
+                <div class="empty-icon">💬</div>
+                <h3>Select a friend to start chatting</h3>
+                <p>Messages are end-to-end persisted locally and visible only between connected friends.</p>
+              </div>
+
+              <div id="chat-active-window" class="chat-active-window hidden">
+                <div class="chat-header">
+                  <div class="chat-peer-info" onclick="openSelectedFriendModal()">
+                    <img id="chat-peer-avatar" src="" alt="Peer" />
+                    <div>
+                      <h4 id="chat-peer-name">Friend Name</h4>
+                      <span id="chat-peer-status" class="status-online">● Connected Friend • Click to view profile</span>
+                    </div>
+                  </div>
+                  <button class="btn-outline btn-sm" onclick="openSelectedFriendModal()">View Profile</button>
+                </div>
+
+                <div id="chat-messages-box" class="chat-messages-box"></div>
+
+                <form class="chat-input-bar" onsubmit="sendMessage(event)">
+                  <input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off" required />
+                  <button type="submit" class="btn-primary">Send ➤</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PAGE 4: MY PROFILE (VIEW & EDIT) -->
+        <div id="page-profile" class="page-section hidden">
+          <div class="card profile-full-card">
+            <div class="profile-banner"></div>
+            <div class="profile-header-row">
+              <img id="prof-avatar-preview" class="profile-large-avatar" src="" alt="Profile Photo" />
+              <div class="profile-title-block">
+                <h2 id="prof-display-name">Full Name</h2>
+                <p id="prof-display-headline">Professional Info</p>
+              </div>
+            </div>
+
+            <form id="profile-edit-form" class="profile-form" onsubmit="saveProfile(event)">
+              <h3 class="form-section-title">Personal & Contact Details</h3>
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label>Full Name *</label>
+                  <input type="text" id="edit-name" required />
+                </div>
+                <div class="form-group">
+                  <label>Email Address (Read-only Unique ID)</label>
+                  <input type="email" id="edit-email" disabled />
+                </div>
+                <div class="form-group">
+                  <label>Date of Birth *</label>
+                  <input type="date" id="edit-dob" required />
+                </div>
+                <div class="form-group">
+                  <label>Phone Number</label>
+                  <input type="tel" id="edit-phone" placeholder="e.g. +91 9876543210" />
+                </div>
+                <div class="form-group full-span">
+                  <label>Address / City</label>
+                  <input type="text" id="edit-address" placeholder="e.g. IIIT Bhagalpur Campus, Sabour, Bihar" />
+                </div>
+              </div>
+
+              <h3 class="form-section-title">Academic, Professional & Interests</h3>
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label>Education</label>
+                  <input type="text" id="edit-education" placeholder="e.g. B.Tech CSE, IIIT Bhagalpur (2024-2028)" />
+                </div>
+                <div class="form-group">
+                  <label>Professional Information / Role</label>
+                  <input type="text" id="edit-profession" placeholder="e.g. Competitive Programmer & Full-Stack Developer" />
+                </div>
+                <div class="form-group full-span">
+                  <label>Hobbies & Interests <small>(comma separated)</small></label>
+                  <input type="text" id="edit-hobbies" placeholder="e.g. Competitive Coding, System Design, Photography, Travel" />
+                </div>
+                <div class="form-group full-span">
+                  <label>Profile Photo (Avatar Preset or Custom Image URL / Upload)</label>
+                  <div class="photo-input-row">
+                    <input type="text" id="edit-photo" placeholder="Paste image URL or choose a preset below" oninput="previewAvatarUrl(this.value)" />
+                    <label class="btn-outline btn-sm upload-btn">
+                      Upload Local Photo
+                      <input type="file" accept="image/*" hidden onchange="handlePhotoUpload(event)" />
+                    </label>
+                  </div>
+                  <div class="avatar-presets">
+                    <span>Presets:</span>
+                    <button type="button" onclick="setAvatarPreset('male1')">👨‍💻 Dev Male</button>
+                    <button type="button" onclick="setAvatarPreset('female1')">👩‍💻 Dev Female</button>
+                    <button type="button" onclick="setAvatarPreset('grad')">🎓 Scholar</button>
+                    <button type="button" onclick="setAvatarPreset('initials')">🔤 Initials Badge</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-footer">
+                <button type="submit" class="btn-primary">Save Profile Changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- PAGE 5: SOFTWARE ENGINEERING SPECIFICATIONS (FOR LAB EVALUATION) -->
+        <div id="page-se-docs" class="page-section hidden">
+          <div class="card se-doc-card">
+            <div class="doc-badge">CS311 Software Engineering Lab • IIIT Bhagalpur</div>
+            <h2>P04: System Architecture, Use Cases, Data Model & Constraints</h2>
+            <p class="doc-intro">Prepared for live lab demonstration & evaluation. Summarizes Section 5 (Suggested Starting Point) of the Project Manual.</p>
+
+            <div class="se-grid">
+              <div class="se-box">
+                <h3>1. System Actors</h3>
+                <ul>
+                  <li><strong>Guest / Unregistered Visitor:</strong> Can register a new account or authenticate into an existing account.</li>
+                  <li><strong>Registered User (Member):</strong> Authenticated user who manages their own profile, publishes posts, searches members, sends/accepts friend requests, and messages connected friends.</li>
+                  <li><strong>System / Rule Engine:</strong> Enforces uniqueness constraints, age restrictions, friendship access control, and local storage persistence.</li>
+                </ul>
+              </div>
+
+              <div class="se-box">
+                <h3>2. Core Use Cases</h3>
+                <ul>
+                  <li><strong>UC-01 Register Account:</strong> Visitor submits Name, Email, Password, DOB. System validates email uniqueness & age ≥ 13.</li>
+                  <li><strong>UC-02 User Login:</strong> Member authenticates via Email + Password to establish an active session.</li>
+                  <li><strong>UC-03 View & Edit Profile:</strong> Member updates DOB, Address, Phone, Education, Photo, Profession, and Hobbies.</li>
+                  <li><strong>UC-04 Friend Discovery & Request:</strong> Member searches peers, sends requests, or accepts/declines incoming requests.</li>
+                  <li><strong>UC-05 View Friend's Profile:</strong> Member inspects a peer's basic profile (privacy-aware fields).</li>
+                  <li><strong>UC-06 Direct Messaging:</strong> Member exchanges real-time messages strictly with accepted friends.</li>
+                </ul>
+              </div>
+
+              <div class="se-box">
+                <h3>3. Relational / Entity Data Model</h3>
+                <ul>
+                  <li><strong>Users Table:</strong> <code>user_id (PK)</code>, <code>name</code>, <code>email (UNIQUE)</code>, <code>password_hash</code>, <code>dob</code>, <code>address</code>, <code>phone</code>, <code>education</code>, <code>profession</code>, <code>hobbies[]</code>, <code>photo_url</code></li>
+                  <li><strong>Friendships Table:</strong> <code>id (PK)</code>, <code>sender_id (FK)</code>, <code>receiver_id (FK)</code>, <code>status ('PENDING' | 'ACCEPTED')</code>, <code>created_at</code></li>
+                  <li><strong>Messages Table:</strong> <code>msg_id (PK)</code>, <code>sender_id (FK)</code>, <code>receiver_id (FK)</code>, <code>body</code>, <code>timestamp</code>, <code>read</code></li>
+                  <li><strong>Posts Table:</strong> <code>post_id (PK)</code>, <code>author_id (FK)</code>, <code>tag</code>, <code>content</code>, <code>likes[]</code>, <code>timestamp</code></li>
+                </ul>
+              </div>
+
+              <div class="se-box">
+                <h3>4. Enforced Business Rules & Test Cases</h3>
+                <ul>
+                  <li><strong>BR-01 Unique Email:</strong> Duplicate emails are rejected on registration.</li>
+                  <li><strong>BR-02 Password Strength:</strong> Minimum 6 characters required.</li>
+                  <li><strong>BR-03 Minimum Age Policy:</strong> Users must be at least 13 years old based on DOB.</li>
+                  <li><strong>BR-04 No Self-Friending:</strong> A user cannot send a friend request to their own ID.</li>
+                  <li><strong>BR-05 No Duplicate Requests:</strong> Existing pending or accepted links block duplicate requests.</li>
+                  <li><strong>BR-06 Friendship-Gated Chat:</strong> Messages can only be sent if <code>status === 'ACCEPTED'</code>.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Sidebar: Suggestions & Activity -->
+      <aside class="right-sidebar">
+        <div class="card">
+          <h4 class="sidebar-title">People You May Know</h4>
+          <div id="sidebar-suggestions" class="suggestion-list"></div>
+        </div>
+
+        <div class="card">
+          <h4 class="sidebar-title">Live System Audit Log</h4>
+          <div id="audit-log" class="audit-log"></div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- FRIEND PROFILE MODAL -->
+  <div id="friend-modal" class="modal-backdrop hidden" onclick="closeModalOnBackdrop(event)">
+    <div class="modal-card">
+      <button class="modal-close" onclick="closeFriendModal()">✕</button>
+      <div class="modal-banner"></div>
+      <div class="modal-body">
+        <img id="modal-avatar" class="modal-avatar" src="" alt="Friend Photo" />
+        <h2 id="modal-name">Friend Name</h2>
+        <p id="modal-profession" class="modal-sub">Profession</p>
+        <span id="modal-relation-badge" class="relation-badge">Connected Friend</span>
+
+        <div class="modal-info-grid">
+          <div class="info-item">
+            <span class="info-label">🎓 Education</span>
+            <span id="modal-education">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">📍 Location</span>
+            <span id="modal-address">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">🎂 Date of Birth</span>
+            <span id="modal-dob">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">📞 Phone</span>
+            <span id="modal-phone">-</span>
+          </div>
+          <div class="info-item full-span">
+            <span class="info-label">🎯 Hobbies & Interests</span>
+            <div id="modal-hobbies" class="hobby-tags"></div>
+          </div>
+        </div>
+
+        <div id="modal-actions" class="modal-footer-actions"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
